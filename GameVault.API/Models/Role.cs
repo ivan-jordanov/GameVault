@@ -3,13 +3,11 @@ using System.Collections.Generic;
 
 namespace GameVault.API.Models;
 
-public partial class Platform
+public partial class Role
 {
-    public int PlatformId { get; set; }
+    public int RoleId { get; set; }
 
     public string Name { get; set; } = null!;
-
-    public virtual ICollection<Game> Games { get; set; } = new List<Game>();
 
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

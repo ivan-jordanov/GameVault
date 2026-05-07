@@ -48,6 +48,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 // Use HTTPS redirection
 app.UseHttpsRedirection();
 

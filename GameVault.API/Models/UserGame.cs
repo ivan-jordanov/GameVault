@@ -3,25 +3,23 @@ using System.Collections.Generic;
 
 namespace GameVault.API.Models;
 
-public partial class Review
+public partial class UserGame
 {
-    public int ReviewId { get; set; }
-
     public int UserId { get; set; }
 
     public int GameId { get; set; }
 
-    public int Rating { get; set; }
+    public int StatusId { get; set; }
 
-    public string? ReviewText { get; set; }
+    public decimal PlaytimeHours { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime AddedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 
     public virtual Game Game { get; set; } = null!;
 
-    public virtual ICollection<ReviewLike> ReviewLikes { get; set; } = new List<ReviewLike>();
+    public virtual GameStatus Status { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
 }

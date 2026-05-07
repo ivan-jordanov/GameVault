@@ -24,7 +24,7 @@ public class NewsService
                 NewsId = n.NewsId,
                 Title = n.Title,
                 Content = n.Content,
-                PublishDate = n.PublishDate
+                PublishDate = n.PublishDate.HasValue ? n.PublishDate.Value : DateTime.MinValue
             })
             .ToListAsync();
     }

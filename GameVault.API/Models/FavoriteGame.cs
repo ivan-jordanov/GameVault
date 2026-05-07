@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace GameVault.API.Models;
 
-public partial class GameImage
+public partial class FavoriteGame
 {
-    public int ImageId { get; set; }
+    public int UserId { get; set; }
 
     public int GameId { get; set; }
 
-    public string ImageUrl { get; set; } = null!;
-
-    public int DisplayOrder { get; set; }
+    public int Position { get; set; }
 
     public virtual Game Game { get; set; } = null!;
+
+    public virtual User User { get; set; } = null!;
 }

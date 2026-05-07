@@ -1,10 +1,13 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace GameVault.API.Models;
 
-public class Category
+public partial class Category
 {
     public int CategoryId { get; set; }
-    public string Name { get; set; } = string.Empty;
 
-    // Navigation properties
-    public ICollection<Game> Games { get; set; } = new List<Game>();
+    public string Name { get; set; } = null!;
+
+    public virtual ICollection<Game> Games { get; set; } = new List<Game>();
 }

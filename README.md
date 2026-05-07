@@ -39,7 +39,7 @@ GameVault.API/
 2. **Verify the database connection string** in `appsettings.json`:
    ```json
    "ConnectionStrings": {
-     "DefaultConnection": "Data Source=DESKTOP-LGRKHB6\\SQLSERVER;Initial Catalog=GameVault;User ID=sa;Password=54177392;"
+     "DefaultConnection": ""
    }
    ```
 

@@ -1,3 +1,4 @@
+using AutoMapper;
 using GameVault.API.Data;
 using GameVault.API.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -7,39 +8,36 @@ namespace GameVault.API.Services;
 public class ReviewService
 {
     private readonly GameVaultContext _context;
+    private readonly IMapper _mapper;
 
-    public ReviewService(GameVaultContext context)
+    public ReviewService(GameVaultContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // Get all reviews for a specific game with sorting
     public async Task<List<ReviewDto>> GetReviewsByGameIdAsync(int gameId, string? sort = null)
     {
-        var query = _context.Reviews
+        var reviews = await _context.Reviews
             .Where(r => r.GameId == gameId)
-            .Select(r => new ReviewDto
-            {
-                ReviewId = r.ReviewId,
-                GameId = r.GameId,
-                GameTitle = r.Game.Title,
-                Rating = r.Rating,
-                ReviewText = r.ReviewText,
-                CreatedAt = r.CreatedAt,
-                Username = r.User.Username,
-                ProfileImageUrl = r.User.ProfileImageUrl
-            });
+            .Include(r => r.Game)
+            .Include(r => r.User)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var dtos = _mapper.Map<List<ReviewDto>>(reviews);
 
         // Apply sorting
-        query = sort?.ToLower() switch
+        dtos = sort?.ToLower() switch
         {
-            "newest" => query.OrderByDescending(r => r.CreatedAt),
-            "oldest" => query.OrderBy(r => r.CreatedAt),
-            "highest" => query.OrderByDescending(r => r.Rating),
-            "lowest" => query.OrderBy(r => r.Rating),
-            _ => query.OrderByDescending(r => r.CreatedAt) // Default to newest
+            "newest" => dtos.OrderByDescending(r => r.CreatedAt).ToList(),
+            "oldest" => dtos.OrderBy(r => r.CreatedAt).ToList(),
+            "highest" => dtos.OrderByDescending(r => r.Rating).ToList(),
+            "lowest" => dtos.OrderBy(r => r.Rating).ToList(),
+            _ => dtos.OrderByDescending(r => r.CreatedAt).ToList() // Default to newest
         };
 
-        return await query.ToListAsync();
+        return dtos;
     }
 }

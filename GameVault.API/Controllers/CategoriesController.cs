@@ -1,3 +1,4 @@
+using AutoMapper;
 using GameVault.API.Data;
 using GameVault.API.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,12 @@ namespace GameVault.API.Controllers;
 public class CategoriesController : ControllerBase
 {
     private readonly GameVaultContext _context;
+    private readonly IMapper _mapper;
 
-    public CategoriesController(GameVaultContext context)
+    public CategoriesController(GameVaultContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // GET /api/categories
@@ -22,12 +25,10 @@ public class CategoriesController : ControllerBase
     public async Task<ActionResult<List<CategoryDto>>> GetCategories()
     {
         var categories = await _context.Categories
-            .Select(c => new CategoryDto
-            {
-                CategoryId = c.CategoryId,
-                Name = c.Name
-            })
+            .AsNoTracking()
             .ToListAsync();
-        return Ok(categories);
+        
+        var dtos = _mapper.Map<List<CategoryDto>>(categories);
+        return Ok(dtos);
     }
 }

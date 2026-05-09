@@ -1,3 +1,4 @@
+using AutoMapper;
 using GameVault.API.Data;
 using GameVault.API.DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,12 @@ namespace GameVault.API.Controllers;
 public class PlatformsController : ControllerBase
 {
     private readonly GameVaultContext _context;
+    private readonly IMapper _mapper;
 
-    public PlatformsController(GameVaultContext context)
+    public PlatformsController(GameVaultContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // GET /api/platforms
@@ -22,12 +25,10 @@ public class PlatformsController : ControllerBase
     public async Task<ActionResult<List<PlatformDto>>> GetPlatforms()
     {
         var platforms = await _context.Platforms
-            .Select(p => new PlatformDto
-            {
-                PlatformId = p.PlatformId,
-                Name = p.Name
-            })
+            .AsNoTracking()
             .ToListAsync();
-        return Ok(platforms);
+        
+        var dtos = _mapper.Map<List<PlatformDto>>(platforms);
+        return Ok(dtos);
     }
 }

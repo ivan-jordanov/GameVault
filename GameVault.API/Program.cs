@@ -1,6 +1,8 @@
 using GameVault.API.Data;
+using GameVault.API.Mapping;
 using GameVault.API.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Register the GameVaultContext with SQL Server
 builder.Services.AddDbContext<GameVaultContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 
 // Register service layer for dependency injection
 builder.Services.AddScoped<GameService>();

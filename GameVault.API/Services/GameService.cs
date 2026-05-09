@@ -1,3 +1,4 @@
+using AutoMapper;
 using GameVault.API.Data;
 using GameVault.API.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -8,34 +9,48 @@ namespace GameVault.API.Services;
 public class GameService
 {
     private readonly GameVaultContext _context;
+    private readonly IMapper _mapper;
 
-    public GameService(GameVaultContext context)
+    public GameService(GameVaultContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // Get all games with sorting
     public async Task<List<GameSummaryDto>> GetAllGamesAsync(string? sort = null)
     {
-        var query = GetGameSummaryQuery();
+        var games = await _context.Games
+            .Include(g => g.Categories)
+            .Include(g => g.Platforms)
+            .Include(g => g.Reviews)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var dtos = _mapper.Map<List<GameSummaryDto>>(games);
 
         // Apply sorting
-        query = sort?.ToLower() switch
+        dtos = sort?.ToLower() switch
         {
-            "rating" => query.OrderByDescending(g => g.AverageRating ?? 0),
-            "releasedate" => query.OrderByDescending(g => g.ReleaseDate),
-            "alphabetical" => query.OrderBy(g => g.Title),
-            _ => query.OrderByDescending(g => g.AverageRating ?? 0) // Default to rating
+            "rating" => dtos.OrderByDescending(g => g.AverageRating ?? 0).ToList(),
+            "releasedate" => dtos.OrderByDescending(g => g.ReleaseDate).ToList(),
+            "alphabetical" => dtos.OrderBy(g => g.Title).ToList(),
+            _ => dtos.OrderByDescending(g => g.AverageRating ?? 0).ToList() // Default to rating
         };
 
-        return await query.ToListAsync();
+        return dtos;
     }
 
     // Search games by title, category, and platform
     public async Task<List<GameSummaryDto>> SearchGamesAsync(string? q, int? categoryId = null, int? platformId = null)
     {
-        // Start with the Games DbSet to filter on entities before projection
-        var gameQuery = _context.Games.AsQueryable();
+        // Start with the Games DbSet to filter on entities
+        var gameQuery = _context.Games
+            .Include(g => g.Categories)
+            .Include(g => g.Platforms)
+            .Include(g => g.Reviews)
+            .AsNoTracking()
+            .AsQueryable();
 
         // Filter by title (case-insensitive)
         if (!string.IsNullOrWhiteSpace(q))
@@ -56,78 +71,29 @@ public class GameService
             gameQuery = gameQuery.Where(g => g.Platforms.Any(p => p.PlatformId == platformId.Value));
         }
 
-        // Project to DTO and sort by rating (default)
-        var query = gameQuery
-            .Select(g => new GameSummaryDto
-            {
-                GameId = g.GameId,
-                Title = g.Title,
-                CoverArtUrl = g.CoverArtUrl,
-                Developer = g.Developer,
-                Publisher = g.Publisher,
-                ReleaseDate = new DateTime(g.ReleaseDate.Value.Year, g.ReleaseDate.Value.Month, g.ReleaseDate.Value.Day),
-                Categories = g.Categories.Select(c => c.Name).ToList(),
-                Platforms = g.Platforms.Select(p => p.Name).ToList(),
-                ReviewCount = g.Reviews.Count(),
-                AverageRating = g.Reviews.Count() >= 5
-                    ? (double?)g.Reviews.Average(r => r.Rating)
-                    : null
-            })
-            .OrderByDescending(g => g.AverageRating ?? 0);
+        var games = await gameQuery.ToListAsync();
+        var dtos = _mapper.Map<List<GameSummaryDto>>(games);
 
-        return await query.ToListAsync();
+        // Sort by rating (default)
+        dtos = dtos.OrderByDescending(g => g.AverageRating ?? 0).ToList();
+
+        return dtos;
     }
 
     // Get a single game with full details
     public async Task<GameDetailDto?> GetGameByIdAsync(int id)
     {
-        return await _context.Games
-            .Where(g => g.GameId == id)
-            .Select(g => new GameDetailDto
-            {
-                GameId = g.GameId,
-                Title = g.Title,
-                Description = g.Description,
-                CoverArtUrl = g.CoverArtUrl,
-                Developer = g.Developer,
-                Publisher = g.Publisher,
-                ReleaseDate = new DateTime(g.ReleaseDate.Value.Year, g.ReleaseDate.Value.Month, g.ReleaseDate.Value.Day),
-                Images = g.GameImages
-                    .OrderBy(gi => gi.DisplayOrder)
-                    .Select(gi => new GameImageDto
-                    {
-                        ImageUrl = gi.ImageUrl,
-                        DisplayOrder = gi.DisplayOrder
-                    })
-                    .ToList(),
-                Categories = g.Categories.Select(c => c.Name).ToList(),
-                Platforms = g.Platforms.Select(p => p.Name).ToList(),
-                ReviewCount = g.Reviews.Count(),
-                AverageRating = g.Reviews.Count() >= 5
-                    ? (double?)g.Reviews.Average(r => r.Rating)
-                    : null
-            })
-            .FirstOrDefaultAsync();
-    }
+        var game = await _context.Games
+            .Include(g => g.Categories)
+            .Include(g => g.Platforms)
+            .Include(g => g.Reviews)
+            .Include(g => g.GameImages)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.GameId == id);
 
-    // Helper method to build the game summary query with all necessary projections
-    private IQueryable<GameSummaryDto> GetGameSummaryQuery()
-    {
-        return _context.Games
-            .Select(g => new GameSummaryDto
-            {
-                GameId = g.GameId,
-                Title = g.Title,
-                CoverArtUrl = g.CoverArtUrl,
-                Developer = g.Developer,
-                Publisher = g.Publisher,
-                ReleaseDate = new DateTime(g.ReleaseDate.Value.Year, g.ReleaseDate.Value.Month, g.ReleaseDate.Value.Day),
-                Categories = g.Categories.Select(c => c.Name).ToList(),
-                Platforms = g.Platforms.Select(p => p.Name).ToList(),
-                ReviewCount = g.Reviews.Count(),
-                AverageRating = g.Reviews.Count() >= 5
-                    ? (double?)g.Reviews.Average(r => r.Rating)
-                    : null
-            });
+        if (game == null)
+            return null;
+
+        return _mapper.Map<GameDetailDto>(game);
     }
 }

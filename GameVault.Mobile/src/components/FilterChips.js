@@ -2,6 +2,10 @@ import { ScrollView, Pressable, Text, View } from 'react-native';
 
 import { colors } from '../theme';
 
+function getItemId(item) {
+  return item.id ?? item.categoryId ?? item.platformId;
+}
+
 export default function FilterChips({ items = [], selected, onSelect, label }) {
   return (
     <View className="space-y-2">
@@ -10,12 +14,13 @@ export default function FilterChips({ items = [], selected, onSelect, label }) {
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {items.map((item) => {
-          const active = selected === item.id;
+          const itemId = getItemId(item);
+          const active = selected === itemId;
 
           return (
             <Pressable
-              key={item.id}
-              onPress={() => onSelect(active ? null : item.id)}
+              key={`${label}-${itemId}`}
+              onPress={() => onSelect(active ? null : itemId)}
               className="rounded-full border px-4 py-2"
               style={{
                 borderColor: active ? colors.accent : colors.border,

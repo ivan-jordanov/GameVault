@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import FilterChips from '../components/FilterChips';
@@ -8,7 +8,6 @@ import { colors, spacing } from '../theme';
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [categories, setCategories] = useState([]);
   const [platforms, setPlatforms] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -18,15 +17,40 @@ export default function SearchScreen({ navigation }) {
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState('');
   const [reloadTick, setReloadTick] = useState(0);
-  const [lastLoadedSearchKey, setLastLoadedSearchKey] = useState('');
+  const [lastSearchSummary, setLastSearchSummary] = useState('All games');
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query.trim());
-    }, 300);
+  const runSearch = useCallback(async () => {
+    const trimmedQuery = query.trim();
 
-    return () => clearTimeout(timer);
-  }, [query]);
+    try {
+      setSearchLoading(true);
+      setError('');
+
+      const searchResults = await searchGames(trimmedQuery, selectedCategoryId, selectedPlatformId);
+
+      setResults(searchResults ?? []);
+
+      const summaryParts = [];
+
+      if (trimmedQuery) {
+        summaryParts.push(`"${trimmedQuery}"`);
+      }
+
+      if (selectedCategoryId !== null) {
+        summaryParts.push('selected category');
+      }
+
+      if (selectedPlatformId !== null) {
+        summaryParts.push('selected platform');
+      }
+
+      setLastSearchSummary(summaryParts.length ? summaryParts.join(' + ') : 'All games');
+    } catch (searchError) {
+      setError(searchError.message || 'Failed to search games.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [query, selectedCategoryId, selectedPlatformId]);
 
   useEffect(() => {
     let mounted = true;
@@ -49,7 +73,7 @@ export default function SearchScreen({ navigation }) {
         setCategories(categoriesResponse ?? []);
         setPlatforms(platformsResponse ?? []);
         setResults(initialResults ?? []);
-        setLastLoadedSearchKey('||');
+        setLastSearchSummary('All games');
       } catch (loadError) {
         if (mounted) {
           setError(loadError.message || 'Failed to load search filters.');
@@ -67,47 +91,6 @@ export default function SearchScreen({ navigation }) {
       mounted = false;
     };
   }, [reloadTick]);
-
-  useEffect(() => {
-    let mounted = true;
-    const searchKey = `${debouncedQuery}|${selectedCategoryId ?? ''}|${selectedPlatformId ?? ''}`;
-
-    if (searchKey === lastLoadedSearchKey) {
-      return () => {
-        mounted = false;
-      };
-    }
-
-    async function runSearch() {
-      try {
-        setSearchLoading(true);
-        setError('');
-
-        const searchResults = await searchGames(debouncedQuery, selectedCategoryId, selectedPlatformId);
-
-        if (mounted) {
-          setResults(searchResults ?? []);
-          setLastLoadedSearchKey(searchKey);
-        }
-      } catch (searchError) {
-        if (mounted) {
-          setError(searchError.message || 'Failed to search games.');
-        }
-      } finally {
-        if (mounted) {
-          setSearchLoading(false);
-        }
-      }
-    }
-
-    if (!loading) {
-      runSearch();
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [debouncedQuery, selectedCategoryId, selectedPlatformId, lastLoadedSearchKey]);
 
   const resultLabel = useMemo(() => `${results.length} results found`, [results.length]);
 
@@ -142,6 +125,8 @@ export default function SearchScreen({ navigation }) {
       <TextInput
         value={query}
         onChangeText={setQuery}
+        onSubmitEditing={runSearch}
+        returnKeyType="search"
         placeholder="Search games by title"
         placeholderTextColor={colors.muted}
         className="mt-4 rounded-2xl border px-4 py-3 text-base"
@@ -161,13 +146,28 @@ export default function SearchScreen({ navigation }) {
           selected={selectedPlatformId}
           onSelect={setSelectedPlatformId}
         />
+
+        <Pressable
+          onPress={runSearch}
+          disabled={searchLoading}
+          className="mt-2 items-center rounded-2xl px-4 py-3"
+          style={{
+            backgroundColor: searchLoading ? colors.muted : colors.accent,
+            opacity: searchLoading ? 0.8 : 1,
+          }}>
+          <Text className="text-base font-semibold" style={{ color: '#04120B' }}>
+            {searchLoading ? 'Searching...' : 'Search'}
+          </Text>
+        </Pressable>
       </View>
 
       <View className="mt-6 flex-row items-center justify-between">
         <Text className="text-base font-semibold" style={{ color: colors.text }}>
           {resultLabel}
         </Text>
-        {searchLoading ? <ActivityIndicator color={colors.accent} /> : null}
+        <Text className="text-xs" style={{ color: colors.muted }}>
+          {lastSearchSummary}
+        </Text>
       </View>
 
       {!results.length && !searchLoading ? (

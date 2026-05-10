@@ -53,9 +53,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-// Use HTTPS redirection
-app.UseHttpsRedirection();
+// Keep HTTP available in local development so mobile clients can reach the API over LAN.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Map controllers
 app.MapControllers();

@@ -22,6 +22,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
+      "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
@@ -42,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "apiPort": 65243,
+      "apiBaseUrl": "http://192.168.1.155:65243/api",
+      "apiBaseUrlWeb": "http://localhost:65243/api",
+      "apiBaseUrlAndroid": "http://10.0.2.2:65243/api",
+      "apiBaseUrlIos": "http://localhost:65243/api"
     }
   }
 }

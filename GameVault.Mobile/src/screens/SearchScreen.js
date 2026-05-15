@@ -10,8 +10,8 @@ export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
   const [categories, setCategories] = useState([]);
   const [platforms, setPlatforms] = useState([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [selectedPlatformId, setSelectedPlatformId] = useState(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [selectedPlatformIds, setSelectedPlatformIds] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -26,7 +26,9 @@ export default function SearchScreen({ navigation }) {
       setSearchLoading(true);
       setError('');
 
-      const searchResults = await searchGames(trimmedQuery, selectedCategoryId, selectedPlatformId);
+      const categoryId = selectedCategoryIds[0] ?? null;
+      const platformId = selectedPlatformIds[0] ?? null;
+      const searchResults = await searchGames(trimmedQuery, categoryId, platformId);
 
       setResults(searchResults ?? []);
 
@@ -36,12 +38,12 @@ export default function SearchScreen({ navigation }) {
         summaryParts.push(`"${trimmedQuery}"`);
       }
 
-      if (selectedCategoryId !== null) {
-        summaryParts.push('selected category');
+      if (selectedCategoryIds.length) {
+        summaryParts.push(`${selectedCategoryIds.length} category`);
       }
 
-      if (selectedPlatformId !== null) {
-        summaryParts.push('selected platform');
+      if (selectedPlatformIds.length) {
+        summaryParts.push(`${selectedPlatformIds.length} platform`);
       }
 
       setLastSearchSummary(summaryParts.length ? summaryParts.join(' + ') : 'All games');
@@ -50,7 +52,7 @@ export default function SearchScreen({ navigation }) {
     } finally {
       setSearchLoading(false);
     }
-  }, [query, selectedCategoryId, selectedPlatformId]);
+  }, [query, selectedCategoryIds, selectedPlatformIds]);
 
   useEffect(() => {
     let mounted = true;
@@ -137,14 +139,14 @@ export default function SearchScreen({ navigation }) {
         <FilterChips
           label="Categories"
           items={categories}
-          selected={selectedCategoryId}
-          onSelect={setSelectedCategoryId}
+          selected={selectedCategoryIds}
+          onSelect={setSelectedCategoryIds}
         />
         <FilterChips
           label="Platforms"
           items={platforms}
-          selected={selectedPlatformId}
-          onSelect={setSelectedPlatformId}
+          selected={selectedPlatformIds}
+          onSelect={setSelectedPlatformIds}
         />
 
         <Pressable

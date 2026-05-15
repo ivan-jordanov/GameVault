@@ -147,7 +147,11 @@ export default function GameDetailScreen({ route, navigation }) {
         </View>
 
         {game.coverArtUrl ? (
-          <Image source={{ uri: game.coverArtUrl }} style={{ width: '100%', height: 320 }} contentFit="cover" />
+          <Image
+            source={{ uri: game.coverArtUrl }}
+            style={{ width: '100%', height: 320, backgroundColor: colors.surface }}
+            contentFit="contain"
+          />
         ) : (
           <View style={{ width: '100%', height: 320, backgroundColor: '#121A28' }} />
         )}
@@ -155,7 +159,12 @@ export default function GameDetailScreen({ route, navigation }) {
         {sortedScreenshots.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.page, paddingVertical: 16 }}>
             {sortedScreenshots.map((image) => (
-              <Image key={`${image.imageUrl}-${image.displayOrder}`} source={{ uri: image.imageUrl }} style={{ width: Dimensions.get('window').width * 0.7, height: 180, marginRight: 12, borderRadius: 20 }} contentFit="cover" />
+              <Image
+                key={`${image.imageUrl}-${image.displayOrder}`}
+                source={{ uri: image.imageUrl }}
+                style={{ width: Dimensions.get('window').width * 0.7, height: 180, marginRight: 12, borderRadius: 20, backgroundColor: colors.surface }}
+                contentFit="contain"
+              />
             ))}
           </ScrollView>
         ) : null}
